@@ -1,48 +1,50 @@
-<!-- PYADI-IIO README -->
+# TinyRadTool — macOS & Linux Standalone Port
 
-<p align="center">
-<img src="" width="500" alt="Analog Logo"> </br>
-</p>
-<a href="https://www.python.org/download/releases/3.7.0/">
-<img src="https://img.shields.io/badge/python-3.7+-blue.svg" alt="Python Version">
-</a>
+Analog Devices Python GUI application for the **EV-TINYRAD24G** 24 GHz MIMO FMCW Radar Evaluation Platform (`idVendor=0x064B`, `idProduct=0x7823`), updated for native **macOS** (Apple Silicon & Intel) and **Linux** (x86_64 & ARM64) execution and standalone app distribution.
 
-<a href="http://analogdevicesinc.github.io/tinyradtool/">
-<img alt="GitHub Pages" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg">
-</a>
-
-<a href="https://ez.analog.com">
-<img alt="EngineerZone" src="https://img.shields.io/badge/Support-on%20EngineerZone-blue.svg">
-</a>
-
-<a href="https://wiki.analog.com">
-<img alt="Analog Wiki" src="https://img.shields.io/badge/Wiki-on%20wiki.analog.com-blue.svg">
-</a>
-</p>
+See [`PLAN.md`](PLAN.md) and [`docs/superpowers/specs/2026-11-25-tinyradtool-macos-linux-design.md`](docs/superpowers/specs/2026-11-25-tinyradtool-macos-linux-design.md) for the full REA reverse-engineering findings and architectural plan.
 
 ---
 
-### TinyRadTool: Analog Devices python GUI application for EV-TINYRAD24 24GHz Radar Evaluation Platform
+## Quick Start (Running from Source)
 
-The EV-TINYRAD24G is a radar evaluation module that allows the implementation and testing of radar sensing applications in the 24 GHz industrial, scientific, and medical (ISM) band. TinyRadTool Software is PC evaluation software of EV-TINYRAD24G, with an included graphical user interface (GUI), that performs radar signal processing steps to yield radar point clouds that can be visualized as range doppler or range angle plots. This software main functions can be categorized as follow: a) Communicate with controller to change settings. b) communicate with digital signal processing module to get processed data and visualize. 
-
-```shell
-> & python TinyRadTool.py
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python TinyRadTool.py
 ```
 
-### Installing from source
+---
 
-```shell
-> & git clone https://github.com/analogdevicesinc/tinyradtool.git
-> & cd tinyradtool
-> & pip install -r requirements.txt
+## Building Standalone Distributable Apps
+
+### Linux (`.tar.gz` bundle + `.deb` package + `udev` rules)
+```bash
+# Install udev rule for non-root USB access to EV-TINYRAD24G (064b:7823)
+sudo cp packaging/linux/99-tinyrad.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# Build standalone app bundle and .deb package
+bash packaging/linux/build_linux.sh
 ```
+Artifacts produced in `dist/`:
+- `dist/TinyRadTool/TinyRadTool` (self-contained executable folder)
+- `dist/TinyRadTool-linux-x86_64.tar.gz`
+- `dist/tinyradtool_1.1.2_amd64.deb`
 
-### Dependencies
+### macOS (`TinyRadTool.app` + `TinyRadTool-macOS.dmg`)
+```bash
+brew install libusb
+bash packaging/macos/build_macos.sh
+```
+Artifacts produced in `dist/`:
+- `dist/TinyRadTool.app` (bundles `libusb-1.0.dylib`, `config/*.rtc`, and `firmware/*.img`)
+- `dist/TinyRadTool-macOS.dmg`
 
-| Dependency    | Version        | Link         |
-| ------------- | -------------  |------------- |
-| PyQt5         |5.15.7          |              |
-| numpy         |  1.10.4        |              |
-| pyqtgraph     | 0.9.10         |              |
-| pyusb         | 1.2.1          |              |
+---
+
+## Running Tests
+
+```bash
+QT_QPA_PLATFORM=offscreen .venv/bin/pytest -v
+```

@@ -12,12 +12,13 @@ import  src.ui.about as aboutdialog
 import  src.ui.StrtupBrd as StrtupBrd
 import  src.ui.fwupgrd as FwUpgrdDialog
 import  src.cmd_modules.TinyRad as TinyRad
+import  src.cmd_modules.PlatformPaths as PlatformPaths
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import  numpy as np
 
-__version__ = "0.0.1"
+__version__ = "1.1.2"
 
 class   StackGui(QtWidgets.QMainWindow):
 
@@ -25,8 +26,8 @@ class   StackGui(QtWidgets.QMainWindow):
         super(StackGui, self).__init__(parent)
 
         self.GuiTitle = "TinyRadTool GUI"
-        self.stFileCfg = "c:/Tools/TinyRadTool/Default.rtc"
-        self.stFolderCfg = "c:/Tools/TinyRadTool/"
+        self.stFileCfg = PlatformPaths.get_default_config_file()
+        self.stFolderCfg = PlatformPaths.get_default_config_dir()
         self.GuiEnaViewFmcw = True
         self.GuiEnaViewRangeDoppler =   True
         self.GuiEnaViewDBF = True
@@ -240,7 +241,7 @@ class   StackGui(QtWidgets.QMainWindow):
 
     def openSetupDialog(self):
         u = setupBoard.SetupBoard(self)
-        if u.exec_() == QtGui.QDialog.Accepted:
+        if u.exec_() == QtWidgets.QDialog.Accepted:
             pass
             #print("dialog accept")
             # update view/info:
@@ -301,9 +302,7 @@ class   StackGui(QtWidgets.QMainWindow):
         u.exec_()
 
     def center(self):
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        self.move(centerPoint.x() - self.width() * 0.5, centerPoint.y() - self.height() * 0.5)
+        PlatformPaths.center_window(self)
 
     def cleanUp(self):
         for i in self.__dict__:

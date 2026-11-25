@@ -1,9 +1,10 @@
 
+import  math
 import  sys
 import  numpy
 from    numpy import *
 
-from    pyqtgraph.Qt import QtGui, QtCore
+from    PyQt5 import QtGui, QtCore, QtWidgets
 import  pyqtgraph as pg
 
 class Computation():
@@ -91,10 +92,10 @@ class Computation():
         elif (self.dataType == 5):
             print("Data");
         
-        pg.QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
        
     def CreateView(self):
-        self.viewApp = QtGui.QApplication([]);
+        self.viewApp = QtWidgets.QApplication.instance() or QtWidgets.QApplication([]);
     
         if (self.dataType <= 1):
             self.viewWin = pg.GraphicsWindow("Plot");          
@@ -201,7 +202,7 @@ class Computation():
             self.viewY = vFreqVel/fc*c0/2 # vVel
     
         elif (self.dataType == 4):
-            self.viewWin = QtGui.QMainWindow();
+            self.viewWin = QtWidgets.QMainWindow();
             view = pg.GraphicsLayoutWidget()
             self.viewWin.setCentralWidget(view);
             self.viewWin.show();
@@ -298,7 +299,7 @@ class Computation():
                 Ret = conn.CmdSend(0, int('0x6160', 0), Data, 0);
                 Ret = conn.CmdRecv();
                 
-                self.SetDataType(id, fromstring(Ret.tostring(), dtype='float32'));
+                self.SetDataType(id, frombuffer(Ret.tobytes(), dtype='float32'));
             
         elif (stType == self.RD):
             if (self.isSet_Np and self.isSet_Tp):
@@ -314,7 +315,7 @@ class Computation():
                 Ret = conn.CmdSend(0, int('0x6160', 0), Data, 0);
                 Ret = conn.CmdRecv();
                                 
-                self.SetDataType(id, fromstring(Ret.tostring(), dtype='float32'));
+                self.SetDataType(id, frombuffer(Ret.tobytes(), dtype='float32'));
                 
         elif (stType == self.DL):
             id = 4;
@@ -329,7 +330,7 @@ class Computation():
             Ret = conn.CmdSend(0, int('0x6160', 0), Data, 0);
             Ret = conn.CmdRecv();
                             
-            self.SetDataType(id, fromstring(Ret.tostring(), dtype='float32'));
+            self.SetDataType(id, frombuffer(Ret.tobytes(), dtype='float32'));
             
         elif (stType == self.TT):
             id = 5;  
@@ -344,7 +345,7 @@ class Computation():
             Ret = conn.CmdSend(0, int('0x6160', 0), Data, 0);
             Ret = conn.CmdRecv();
             
-            self.SetDataType(id, fromstring(Ret.tostring(), dtype='float32'));
+            self.SetDataType(id, frombuffer(Ret.tobytes(), dtype='float32'));
             
         else:
             print('DataType unknown');
@@ -547,7 +548,7 @@ class Computation():
             Tracks = [];
             for trackIdx in range(0, self.ttNumTracks):
                 Track = dict(
-                            Id=fromstring(ttData[int((9 + 2 * self.ttNumHist) * trackIdx + 0)].tostring(), dtype='int32')[0],
+                            Id=frombuffer(ttData[int((9 + 2 * self.ttNumHist) * trackIdx + 0)].tobytes(), dtype='int32')[0],
                             X=ttData[int((9 + 2 * self.ttNumHist) * trackIdx + 1)],
                             Y=ttData[int((9 + 2 * self.ttNumHist) * trackIdx + 2)],
                             Vel=ttData[int((9 + 2 * self.ttNumHist) * trackIdx + 3)],
@@ -595,7 +596,7 @@ class Computation():
                                 Mag=ttData[int(2 + self.ttTarSize * tarIdx)],
                                 Ang=ttData[int(3 + self.ttTarSize * tarIdx)],
                                 Noise=ttData[int(4 + self.ttTarSize * tarIdx)],
-                                Track=fromstring(ttData[int(5 + self.ttTarSize * tarIdx)].tostring(), dtype='int32')[0],
+                                Track=frombuffer(ttData[int(5 + self.ttTarSize * tarIdx)].tobytes(), dtype='int32')[0],
                                 Amp=[]);
                     Det['Amp'] = ttData[int(6 + self.ttTarSize * tarIdx):int(6 + 2 * self.nrChn + self.ttTarSize * tarIdx):2] + 1j * ttData[int(7 + self.ttTarSize * tarIdx):int(7 + 2 * self.nrChn + self.ttTarSize * tarIdx):2];
                     if not (Det['Range'] == 0 and Det['Vel'] == 0 and Det['Mag'] == 0 and Det['Ang'] == 0):

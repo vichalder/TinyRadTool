@@ -1,0 +1,4 @@
+# Analog Devices EV-TINYRAD24G (Blackfin BF707 Bulk USB Device)
+# Install to /etc/udev/rules.d/99-tinyrad.rules and reload with:
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+SUBSYSTEM=="usb", ATTR{idVendor}=="064b", ATTR{idProduct}=="7823", MODE="0666", GROUP="plugdev", TAG+="uaccess"

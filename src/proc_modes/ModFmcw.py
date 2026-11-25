@@ -18,7 +18,7 @@ from    array import array
 import  re
 import  time
 
-#import  h5py
+import  h5py
 
 
 class ModFmcw(QtWidgets.QMainWindow, ui_ModFmcw.Ui_ModFmcw):
@@ -394,7 +394,7 @@ class ModFmcw(QtWidgets.QMainWindow, ui_ModFmcw.Ui_ModFmcw):
     def Button_LogToFile_Clicked(self):
         StoreData   = self.Log.GetTxt()
         Home        = expanduser("~")
-        FileName    = QtGui.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
+        FileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
         if FileName != "":
             fs= open(FileName, 'w', encoding="utf-8", errors="ignore")
             fs.write(StoreData)
@@ -984,7 +984,7 @@ class ModFmcw(QtWidgets.QMainWindow, ui_ModFmcw.Ui_ModFmcw):
 
         self.ProcFrms= self.ProcFrms + 1;
         self.progressbar.setRange(0,100)
-        self.progressbar.setValue(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"]) 
+        self.progressbar.setValue(int(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"])) 
 
         ColorChn1= self.CButton_Cfg_Chn1.color()
         ColorChn2= self.CButton_Cfg_Chn2.color()

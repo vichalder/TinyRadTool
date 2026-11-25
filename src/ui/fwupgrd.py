@@ -7,9 +7,20 @@ import src.ui.ui_fwupgrd as ui_fwupgrd
 import  src.logger.Logger as Logger
 import hashlib
 import threading
+import numpy as np
 from numpy import *
 import src.cmd_modules.FrmwImg
 from src.cmd_modules.FrmwImg import FirmwareImage
+import src.cmd_modules.PlatformPaths as PlatformPaths
+
+try:
+    import numpy._core.multiarray as _np_multiarray
+    import numpy._core.numeric as _np_numeric
+    sys.modules.setdefault("numpy.core", np._core)
+    sys.modules.setdefault("numpy.core.multiarray", _np_multiarray)
+    sys.modules.setdefault("numpy.core.numeric", _np_numeric)
+except ImportError:
+    pass
 
 """ Firmware Upgrade Dialog handler
 Calls the UI Class Dialog
@@ -40,9 +51,7 @@ class FwUpgrdDialog(QtWidgets.QDialog, ui_fwupgrd.Ui_UpgradeDialog):
 
     def center(self):
         """ Moves the Dialog to the center of the screen """
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        self.move(centerPoint.x() - self.width() * 0.5, centerPoint.y() - self.height() * 0.5)
+        PlatformPaths.center_window(self)
 
     def assignWidgets(self):
         """ Register close Button Signalhandler """
@@ -61,6 +70,7 @@ class FwUpgrdDialog(QtWidgets.QDialog, ui_fwupgrd.Ui_UpgradeDialog):
         if self.FilesAvailable:
             self.textBrowser_ReleaseNotes.clear()
             Idx = self.comboBox_select_image.currentIndex()
+            setattr(sys.modules["__main__"], "FirmwareImage", FirmwareImage)
             with open(self.lFile[Idx], 'rb') as f:
                 FwImage = pickle.load(f)
                 try:
@@ -202,30 +212,30 @@ class FwUpgrdDialog(QtWidgets.QDialog, ui_fwupgrd.Ui_UpgradeDialog):
     def ListFiles(self):
         print("Reading Files in Directory")
         UpgrdFiles = False
-        
-        if len(sys.argv) > 2:
-            print(sys.argv[2])
-            print("Path argument specified: " + sys.argv[2])
-            if os.path.exists(sys.argv[2]):
-                stCfgPath   = sys.argv[2]
-                lDir        = os.listdir(stCfgPath)
-                RegExp      = re.compile(r"(?P<Name>([a-zA-Z0-9\-_]+))[.]{1,1}(?P<Ext>(img))")
-                for Elem in lDir:
-                    Match = RegExp.search(Elem)
-                    if Match:
-                        self.FilesAvailable     = True
-                        stName                  = Match.group("Name")
-                        stExt                   = Match.group("Ext")
-                        stFileDesc              = self.ParseForDescription(stCfgPath + "/" + Elem)
-                        self.comboBox_select_image.addItem(stName + " : " + stFileDesc)
-                        self.lFile.append(stCfgPath + "/" + Elem)
-                    else:
-                        print("No Match: " + Elem)
+        seen_files = set()
+        RegExp = re.compile(r"(?P<Name>([a-zA-Z0-9\-_]+))[.]{1,1}(?P<Ext>(img))")
+
+        for fw_dir in PlatformPaths.get_firmware_dirs():
+            try:
+                lDir = sorted(os.listdir(str(fw_dir)))
+            except OSError:
+                continue
+            for Elem in lDir:
+                Match = RegExp.search(Elem)
+                if Match and Elem not in seen_files:
+                    seen_files.add(Elem)
+                    full_path = str(fw_dir / Elem)
+                    self.FilesAvailable = True
+                    stName = Match.group("Name")
+                    stFileDesc = self.ParseForDescription(full_path)
+                    self.comboBox_select_image.addItem(stName + " : " + stFileDesc)
+                    self.lFile.append(full_path)
 
         if len(self.lFile) > 0:
             UpgrdFiles = True
             self.textBrowser_ReleaseNotes.clear()
             Idx = 0
+            setattr(sys.modules["__main__"], "FirmwareImage", FirmwareImage)
             with open(self.lFile[Idx], 'rb') as f:
                 FwImage = pickle.load(f)
                 try:

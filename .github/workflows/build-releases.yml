@@ -1,0 +1,81 @@
+name: Build TinyRadTool Standalone Apps (macOS & Linux)
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0 libxcb-xinerama0 libgl1 libxkbcommon-x11-0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+
+      - name: Run headless test suite
+        run: |
+          QT_QPA_PLATFORM=offscreen .venv/bin/pytest -v
+
+      - name: Build Linux standalone bundle & .deb package
+        run: |
+          bash packaging/linux/build_linux.sh
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinyRadTool-Linux
+          path: |
+            dist/TinyRadTool-linux-*.tar.gz
+            dist/tinyradtool_*.deb
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libusb via Homebrew
+        run: |
+          brew install libusb
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+
+      - name: Run headless test suite
+        run: |
+          QT_QPA_PLATFORM=offscreen .venv/bin/pytest -v
+
+      - name: Build macOS .app and .dmg
+        run: |
+          bash packaging/macos/build_macos.sh
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TinyRadTool-macOS
+          path: |
+            dist/TinyRadTool-macOS.dmg

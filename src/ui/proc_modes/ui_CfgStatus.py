@@ -2,6 +2,7 @@ import  os
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 import  src.proc_modes.MyTableModel as MyTableModel
+import  src.cmd_modules.PlatformPaths as PlatformPaths
 
 import  re
 
@@ -19,7 +20,7 @@ class   Ui_CfgStatus(object):
         self.progressbar.setRange(0,100)
         self.TabContWidget = QtWidgets.QTabWidget()
 
-        inras_logo_path = os.path.join("src","ressource","img","adi.png")
+        inras_logo_path = PlatformPaths.get_resource_path("src","ressource","img","adi.png")
 
         #--------------------------------------------------------------------------------------
         # Fmcw Define Configuration Page

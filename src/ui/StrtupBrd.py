@@ -5,6 +5,7 @@ import  re
 import  os
 from    os import listdir
 import  src.cmd_modules.StrConv as StrConv
+import  src.cmd_modules.PlatformPaths as PlatformPaths
 import  sys
 
 
@@ -23,59 +24,38 @@ class StrtupBrd(QtWidgets.QDialog, ui_Strtup.Ui_Strtup):
         self.ListFiles()
         
     def ListFiles(self):
+        AnaFiles = False
+        seen_paths = set()
+        RegExp = re.compile(r"(?P<Name>([a-zA-Z0-9\-_]+))[.]{1,1}(?P<Ext>(rtc))")
 
-        stCfgPath   =   self.patre.stFolderCfg
-        AnaFiles    =   False  
-        if len(sys.argv) > 2:
-            print("Path argument spefified: ", sys.argv[2])
-            if os.path.exists(sys.argv[2]):
-                stCfgPath   =   sys.argv[2]   
-                lDir        =   listdir(stCfgPath)     
-                print("Dir:", lDir)
-                RegExp      =   re.compile(r"(?P<Name>([a-zA-Z0-9\-_]+))[.]{1,1}(?P<Ext>(rtc))")
-                for Elem in lDir:
-                    Match           =               RegExp.search(Elem)
-                    if Match:
-                        self.FilesAvailable     =   True
-                        stName                  =   Match.group("Name")
-                        stExt                   =   Match.group("Ext")
-
-                        stFileDesc              =   self.ParseForDescription(stCfgPath + "/" + Elem)
-
-                        self.ComboBox_Select.addItem("Local: " + stName + " : " + stFileDesc)
-                        self.lFile.append(stCfgPath + "/" + Elem)
-                    else:
-                        print("No Match:", Elem)   
-
-        if os.path.exists(self.patre.stFolderCfg):
-            stCfgPath   =   self.patre.stFolderCfg   
-            lDir        =   listdir(stCfgPath)     
-            print("Dir:", lDir)
-            RegExp      =   re.compile(r"(?P<Name>([a-zA-Z0-9\-_]+))[.]{1,1}(?P<Ext>(rtc))")
+        for cfg_dir in PlatformPaths.get_config_dirs():
+            try:
+                lDir = sorted(listdir(str(cfg_dir)))
+            except OSError:
+                continue
             for Elem in lDir:
-                Match           =               RegExp.search(Elem)
+                Match = RegExp.search(Elem)
                 if Match:
-                    self.FilesAvailable     =   True
-                    stName                  =   Match.group("Name")
-                    stExt                   =   Match.group("Ext")
+                    full_path = str(cfg_dir / Elem)
+                    if full_path in seen_paths or Elem in seen_paths:
+                        continue
+                    seen_paths.add(full_path)
+                    seen_paths.add(Elem)
+                    self.FilesAvailable = True
+                    stName = Match.group("Name")
+                    stFileDesc = self.ParseForDescription(full_path)
+                    self.ComboBox_Select.addItem("Tools: " + stName + " : " + str(stFileDesc))
+                    self.lFile.append(full_path)
 
-                    stFileDesc              =   self.ParseForDescription(stCfgPath + Elem)
-
-                    self.ComboBox_Select.addItem("Tools: " + stName + " : " + stFileDesc)
-                    self.lFile.append(stCfgPath + Elem)
-                else:
-                    print("No Match:", Elem)  
-
-
-
+        self.label.setText(f"Available configuration files in {self.patre.stFolderCfg}")
         if len(self.lFile) > 0:
-            AnaFiles    =   True
+            AnaFiles = True
 
         if not AnaFiles:
             palette     = QtGui.QPalette()
             palette.setColor(QtGui.QPalette.Foreground, QtCore.Qt.darkRed)
             self.label.setPalette(palette)             
-            self.label.setText("No configuration files and configuration folder c:/Tools/TinyRadTool/ does not exist !")
+            self.label.setText(f"No configuration files found in {self.patre.stFolderCfg}!")
             self.ComboBox_Select.setDisabled(True)
             
     def ParseForDescription(self, stFile):
@@ -99,7 +79,7 @@ class StrtupBrd(QtWidgets.QDialog, ui_Strtup.Ui_Strtup):
         self.Button_Cancel.clicked.connect(self.ActionButtonCancel)
 
         #self.setStyleSheet("background-color: white;")
-        path = os.path.join("src", "ressource", "img", "adi.png")
+        path = PlatformPaths.get_resource_path("src", "ressource", "img", "adi.png")
         self.Image_Logo     = QtGui.QImage(path)
         self.Label_Logo     = QtWidgets.QLabel()
         self.Logo_Layout    = QtWidgets.QHBoxLayout()
@@ -112,9 +92,7 @@ class StrtupBrd(QtWidgets.QDialog, ui_Strtup.Ui_Strtup):
         self.WidgetPic.setLayout(self.Logo_Layout)
 
     def CenterWindow(self):
-        screen              = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        centerPoint         = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        self.move(centerPoint.x() - self.width() * 0.5, centerPoint.y() - self.height() * 0.5)
+        PlatformPaths.center_window(self)
 
     def ActionButtonOkay(self):
         if self.FilesAvailable:

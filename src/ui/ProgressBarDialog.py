@@ -1,16 +1,14 @@
-from PyQt4 import QtGui
+from PyQt5 import QtWidgets
 import src.ui.ui_ProgressBarDialog as ui_progressbardialog
+import src.cmd_modules.PlatformPaths as PlatformPaths
 
 
-class ProgressBarDialog(QtGui.QDialog, ui_progressbardialog.Ui_ProgressBarDialog):
+class ProgressBarDialog(QtWidgets.QDialog, ui_progressbardialog.Ui_ProgressBarDialog):
 
     def __init__(self):
         super(ProgressBarDialog, self).__init__()
         self.setupUi(self)
         self.center()
 
-
     def center(self):
-        screen = QtGui.QApplication.desktop().screenNumber(QtGui.QApplication.desktop().cursor().pos())
-        centerPoint = QtGui.QApplication.desktop().screenGeometry(screen).center()
-        self.move(centerPoint.x() - self.width() * 0.5, centerPoint.y() - self.height() * 0.5)
+        PlatformPaths.center_window(self)

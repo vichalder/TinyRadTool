@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=TinyRadTool
+Comment=Analog Devices EV-TINYRAD24G 24GHz Radar Evaluation GUI
+Exec=/opt/TinyRadTool/TinyRadTool
+Icon=tinyradtool
+Terminal=false
+Categories=Science;Engineering;Electronics;
+StartupWMClass=TinyRadTool

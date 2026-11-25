@@ -19,7 +19,7 @@ from    array import array
 import  re
 import  time
 
-#import  h5py
+import  h5py
 
 
 class ModPerf(QtWidgets.QMainWindow, ui_ModPerf.Ui_ModPerf):
@@ -67,13 +67,13 @@ class ModPerf(QtWidgets.QMainWindow, ui_ModPerf.Ui_ModPerf):
         print("fc: ", fc)
         print("Bandwidth: ", B)
 
-        Samples = round(StrConv.ToFloat(self.Edit_Cfg_RadSamples.text()))
+        Samples = int(round(StrConv.ToFloat(self.Edit_Cfg_RadSamples.text())))
         Tp = StrConv.ToFloat(self.Edit_Cfg_RadPerd.text())*1e-6
 
 
         N = Samples
         T = Samples/self.fs
-        Np = round(StrConv.ToFloat(self.Edit_Cfg_RadNp.text()))
+        Np = int(round(StrConv.ToFloat(self.Edit_Cfg_RadNp.text())))
 
         kf = B/T
         NFFT = 2**16

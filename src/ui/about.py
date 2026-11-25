@@ -1,6 +1,7 @@
 import os
 from PyQt5 import QtCore, QtGui, QtWidgets
 import src.ui.ui_about as ui_about
+import src.cmd_modules.PlatformPaths as PlatformPaths
 
 """ AboutDialog handler
 Calls the UI Class Dialog
@@ -11,7 +12,7 @@ class AboutDialog(QtWidgets.QDialog, ui_about.Ui_AboutDialog):
         super(AboutDialog, self).__init__()
         self.setupUi(self)
         #self.setStyleSheet("background-color: white;")
-        path = os.path.join("src", "ressource", "img", "adi.png")
+        path = PlatformPaths.get_resource_path("src", "ressource", "img", "adi.png")
         self.Image_Logo = QtGui.QImage(path)
         self.Label_Logo = QtWidgets.QLabel()
         self.Logo_Layout = QtWidgets.QHBoxLayout()
@@ -27,9 +28,7 @@ class AboutDialog(QtWidgets.QDialog, ui_about.Ui_AboutDialog):
 
     def center(self):
         """ Moves the Dialog to the center of the screen """
-        screen = QtWidgets.QApplication.desktop().screenNumber(QtWidgets.QApplication.desktop().cursor().pos())
-        centerPoint = QtWidgets.QApplication.desktop().screenGeometry(screen).center()
-        self.move(centerPoint.x() - self.width() * 0.5, centerPoint.y() - self.height() * 0.5)
+        PlatformPaths.center_window(self)
 
 
     def assignWidgets(self):

@@ -12,7 +12,7 @@ import  src.ui.proc_modes.ui_ModRangeDoppler as ui_ModRangeDoppler
 from    os.path import expanduser
 import  re
 import  time
-#import  h5py
+import  h5py
 
 
 class ModRangeDoppler(QtWidgets.QMainWindow, ui_ModRangeDoppler.Ui_ModRangeDoppler):
@@ -294,7 +294,7 @@ class ModRangeDoppler(QtWidgets.QMainWindow, ui_ModRangeDoppler.Ui_ModRangeDoppl
     def Button_LogToFile_Clicked(self):
         StoreData = self.Log.GetTxt()
         Home = expanduser("~")
-        FileName = QtGui.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
+        FileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
         if FileName != "":
             fs = open(FileName, 'w', encoding="utf-8", errors="ignore")
             fs.write(StoreData)
@@ -497,7 +497,7 @@ class ModRangeDoppler(QtWidgets.QMainWindow, ui_ModRangeDoppler.Ui_ModRangeDoppl
 
             self.ProcFrms = self.ProcFrms + 1;
             self.progressbar.setRange(0,100)
-            self.progressbar.setValue(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"]) 
+            self.progressbar.setValue(int(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"])) 
 
 
             BrdData = self.RfBrd.GetDataEve()

@@ -1,5 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import  src.ui.ui_setupBoard as ui_setupBoard
+import  src.cmd_modules.PlatformPaths as PlatformPaths
 import  re
 
 
@@ -18,9 +19,7 @@ class SetupBoard(QtWidgets.QDialog, ui_setupBoard.Ui_SetupBoard):
         self.pushButton_cancel.clicked.connect(self.pushButton_cancel_clicked)
 
     def CenterWindow(self):
-        screen              = QtGui.QApplication.desktop().screenNumber(QtGui.QApplication.desktop().cursor().pos())
-        centerPoint         = QtGui.QApplication.desktop().screenGeometry(screen).center()
-        self.move(centerPoint.x() - self.width() * 0.5, centerPoint.y() - self.height() * 0.5)
+        PlatformPaths.center_window(self)
 
     def pushButton_apply_clicked(self):
         stIp        =   self.lineEdit_ipaddress.text()

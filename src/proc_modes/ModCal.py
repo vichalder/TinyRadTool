@@ -16,8 +16,6 @@ from    os.path import expanduser
 import  re
 
 import  datetime as datetime
-import  tkinter as tk
-from    tkinter import filedialog
 import  src.cmd_modules.FileStore as FileStore
 
 class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
@@ -95,9 +93,14 @@ class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
 
     def Button_View_Load_Clicked(self):
         print('Load Clicked')
-        root = tk.Tk()
-        root.withdraw()        
-        stFile = filedialog.askopenfilename(initialdir = 'C:/Tools/TinyRadTool/', filetypes = (("Result", "*.h5"), ("All", "*.*")))
+        stFile, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Load Calibration File",
+            self.patre.stFolderCfg,
+            "Result (*.h5);;All (*.*)"
+        )
+        if not stFile:
+            return
         print('File: ', stFile)
         hFile = FileStore.FileStore(stFile)
         self.dCal = hFile.ReadDict('dCal')
@@ -204,7 +207,7 @@ class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
 
     def SigActionCalTimerStart(self):
         self.Timer = QtCore.QTimer()
-        self.connect(self.Timer, QtCore.SIGNAL("timeout()"), self.CalMeasUpdate)
+        self.Timer.timeout.connect(self.CalMeasUpdate)
         self.Timer.setSingleShot(True)
         self.Timer.setInterval(2)
         self.Timer.start()
@@ -328,7 +331,7 @@ class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
         
         fs = self.dBrdCfg["fs"]
         self.SigCfg_Freq = np.linspace(0,self.SigCfg_NFFT-1,self.SigCfg_NFFT)/self.SigCfg_NFFT*fs
-        self.SigCfg_FreqDisp = self.SigCfg_Freq[0:self.SigCfg_NFFT/2]
+        self.SigCfg_FreqDisp = self.SigCfg_Freq[0:int(self.SigCfg_NFFT/2)]
         B = self.dBrdCfg["FreqStop"] - self.dBrdCfg["FreqStrt"]
         T = self.dBrdCfg["TimUp"]
         kf = B/T
@@ -342,11 +345,11 @@ class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
         # Check Limits and correct RMin and RMax
         if self.SigCfg_RMin  < 0:
             self.SigCfg_RMin = 0      
-        if self.SigCfg_RMax > self.SigCfg_RangeDisp[self.SigCfg_NFFT/2-1]:
-            self.SigCfg_RMax = self.SigCfg_RangeDisp[self.SigCfg_NFFT/2-1]
+        if self.SigCfg_RMax > self.SigCfg_RangeDisp[int(self.SigCfg_NFFT/2-1)]:
+            self.SigCfg_RMax = self.SigCfg_RangeDisp[int(self.SigCfg_NFFT/2-1)]
         if self.SigCfg_RMin >   self.SigCfg_RMax:
             self.SigCfg_RMin = self.SigCfg_RangeDisp[0]
-            self.SigCfg_RMax = self.SigCfg_RangeDisp[self.SigCfg_NFFT/2-1]
+            self.SigCfg_RMax = self.SigCfg_RangeDisp[int(self.SigCfg_NFFT/2-1)]
 
         self.RMinIdx = np.argmin(np.abs(self.SigCfg_RangeDisp - self.SigCfg_RMin))
         self.RMaxIdx = np.argmin(np.abs(self.SigCfg_RangeDisp - self.SigCfg_RMax))
@@ -636,7 +639,7 @@ class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
 
         self.ProcFrms = self.ProcFrms + 1;
         self.progressbar.setRange(0,100)
-        self.progressbar.setValue(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"]) 
+        self.progressbar.setValue(int(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"])) 
 
         if NrFrms < 0:
             self.SigCalMeasStop.emit()
@@ -706,7 +709,7 @@ class ModCal(QtWidgets.QMainWindow, ui_ModCal.Ui_ModCal):
         ScaWin = np.sum(Win)
         FuSca = self.RfBrd.Rad.Get('FuSca') 
         XData = np.fft.fft(Data*Win2D, self.SigCfg_NFFT, 0)/ScaWin*FuSca
-        XData = XData[0:self.SigCfg_NFFT/2,:]
+        XData = XData[0:int(self.SigCfg_NFFT/2),:]
 
         return XData
 

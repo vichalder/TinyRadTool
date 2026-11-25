@@ -12,7 +12,7 @@ import  numpy as np
 import  src.ui.proc_modes.ui_ModBpa as ui_ModBpa
 from    os.path import expanduser
 import  re
-#import  h5py
+import  h5py
 
 
 class ModBpa(QtWidgets.QMainWindow, ui_ModBpa.Ui_ModBpa):
@@ -151,7 +151,6 @@ class ModBpa(QtWidgets.QMainWindow, ui_ModBpa.Ui_ModBpa):
                 for Key in self.dBrdCfg:
                     print('/BrdCfg/' + str(Key))
                     if isinstance(self.dBrdCfg[Key],str):
-                        print(np.fromstring(self.dBrdCfg[Key]))
                         Dat = list()
                         Dat.append(self.dBrdCfg[Key])
                         dt = h5py.special_dtype(vlen=bytes)
@@ -173,13 +172,13 @@ class ModBpa(QtWidgets.QMainWindow, ui_ModBpa.Ui_ModBpa):
             self.Layout_Meas.addWidget(self.Image_Meas, 4, 0, 1, 8)
             self.fullscreen_widget.close()
         else:
-            self.fullscreen_widget = QtGui.QWidget()
-            self.fullscreen_child_window = QtGui.QWidget(self.fullscreen_widget)
-            self.fullscreen_layout = QtGui.QVBoxLayout(self.fullscreen_widget)
+            self.fullscreen_widget = QtWidgets.QWidget()
+            self.fullscreen_child_window = QtWidgets.QWidget(self.fullscreen_widget)
+            self.fullscreen_layout = QtWidgets.QVBoxLayout(self.fullscreen_widget)
             self.fullscreen_layout.addWidget(self.Image_Meas)
             self.fullscreen_widget.showFullScreen()
-            QtGui.QShortcut(QtGui.QKeySequence("F11"), self.fullscreen_child_window, self.toggleFullScreen)
-            QtGui.QShortcut(QtGui.QKeySequence("F10"), self.fullscreen_child_window, self.toggleHistogFullScreen)
+            QtWidgets.QShortcut(QtGui.QKeySequence("F11"), self.fullscreen_child_window, self.toggleFullScreen)
+            QtWidgets.QShortcut(QtGui.QKeySequence("F10"), self.fullscreen_child_window, self.toggleHistogFullScreen)
             self.fullscreen_state = True
 
 
@@ -277,7 +276,7 @@ class ModBpa(QtWidgets.QMainWindow, ui_ModBpa.Ui_ModBpa):
     def Button_LogToFile_Clicked(self):
         StoreData = self.Log.GetTxt()
         Home = expanduser("~")
-        FileName = QtGui.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
+        FileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
         if FileName != "":
             fs = open(FileName, 'w', encoding="utf-8", errors="ignore")
             fs.write(StoreData)
@@ -545,7 +544,7 @@ class ModBpa(QtWidgets.QMainWindow, ui_ModBpa.Ui_ModBpa):
 
                 self.ProcFrms = self.ProcFrms + 1;
                 self.progressbar.setRange(0,100)
-                self.progressbar.setValue(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"])     
+                self.progressbar.setValue(int(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"]))     
 
                 Bpa = self.CalcBpaMap(Data)
                 self.RefMap = np.copy(Bpa)
@@ -736,11 +735,11 @@ class ModBpa(QtWidgets.QMainWindow, ui_ModBpa.Ui_ModBpa):
             self.RMin = 0
             self.RMax = self.SigCfg_Range[int(self.SigCfg_NFFT/2-1)]
             self.RMax = np.floor(self.RMax*10)/10
-            self.UpdIniAppend('Func','slef.Edit_Meas_RMin.setText',str(self.RMin))
+            self.UpdIniAppend('Func','self.Edit_Meas_RMin.setText',str(self.RMin))
             self.UpdIniAppend('Func','self.Edit_Meas_RMax.setText',str(self.RMax))
 
         if self.RMax > self.SigCfg_Range[int(self.SigCfg_NFFT/2-1)]:
-            self.RMax = self.SigCfg_Range[self.SigCfg_NFFT/2-1]
+            self.RMax = self.SigCfg_Range[int(self.SigCfg_NFFT/2-1)]
             self.RMax = np.floor(self.RMax*10)/10
             self.UpdIniAppend('Func','self.Edit_Meas_RMax.setText',str(self.RMax))
 

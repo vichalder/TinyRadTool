@@ -8,6 +8,7 @@ import  src.cmd_modules.Connection as Connection
 import ctypes
 import sys
 import struct
+import time
 from numpy import *
 
 
@@ -17,6 +18,12 @@ class UsbADI(Connection.Connection):
     Loads the dll via ctypes. Arguments which are passed to functions
     (which mainly act as wrapper) are casted to the correct type
     """
+
+    FrmwrFlshNrBlcks = 64
+    FrmwrFlshNrSctrs = 16
+    FrmwrFlshSzSctr = 1024
+    FrmwrFlshSzSctrByts = 4096
+    FrmwrRdSz = 128
 
     def __init__(self, stConType='Usb', *args):
         super(UsbADI, self).__init__('TinyRad', stConType, *args);
@@ -42,9 +49,55 @@ class UsbADI(Connection.Connection):
             return Ret;
         
     def CmdExec(self, Ack, Cod, Data, Open=1):
-        Ret = self.CmdSend(Ack, Cod, Data, Open);
-        Ret = self.CmdRecv();
-        return (True, Ret);
+        self.CmdSend(Ack, Cod, Data, Open)
+        Ret = self.CmdRecv()
+        if isinstance(Ret, ndarray):
+            return (True, Ret)
+        return (False, zeros(0, dtype='uint32'))
+
+    def Dsp_FmwrUpdtRmFlsh(self):
+        Cmd = ones(6, dtype='uint32')
+        Cmd[0] = 1
+        Cmd[1] = 0
+        Cmd[2] = 0
+        Cmd[3] = 0
+        Cmd[4] = 0
+        Cmd[5] = 0
+        self.CmdSend(0, int('0x6009', 0), Cmd)
+        time.sleep(15)
+        Ret = self.CmdRecv()
+        if isinstance(Ret, ndarray):
+            return (True, Ret)
+        return (False, zeros(0, dtype='uint32'))
+
+    def Dsp_FmwrUpdtRdPt(self, Block, Sector, Addr):
+        Cmd = ones(6, dtype='uint32')
+        Cmd[0] = 1
+        Cmd[1] = 1
+        Cmd[2] = uint32(Block)
+        Cmd[3] = uint32(Sector)
+        Cmd[4] = uint32(Addr)
+        Cmd[5] = uint32(self.FrmwrRdSz)
+        self.CmdSend(0, int('0x6009', 0), Cmd)
+        Ret = self.CmdRecv()
+        if isinstance(Ret, ndarray) and len(Ret) > 0:
+            return (True, Ret)
+        return (False, zeros(self.FrmwrRdSz, dtype='uint32'))
+
+    def Dsp_FmwrUpdtWrPt(self, Block, Sector, Addr, Data):
+        Cmd = ones(6, dtype='uint32')
+        Cmd[0] = 1
+        Cmd[1] = 2
+        Cmd[2] = uint32(Block)
+        Cmd[3] = uint32(Sector)
+        Cmd[4] = uint32(Addr)
+        Cmd[5] = uint32(self.FrmwrRdSz)
+        Cmd = concatenate((Cmd, array(Data, dtype='uint32')))
+        self.CmdSend(0, int('0x6009', 0), Cmd)
+        Ret = self.CmdRecv()
+        if isinstance(Ret, ndarray):
+            return (True, Ret)
+        return (False, zeros(0, dtype='uint32'))
         
     def BrdGetUID(self):
         DspCmd = zeros(2, dtype='uint32')
@@ -226,7 +279,8 @@ class UsbADI(Connection.Connection):
         CalDat      = zeros(32*4, dtype='uint8')
         for Loop in range(32*4):
             rdelem = self.BrdRdEEPROM(Loop)
-            CalDat[Loop] = uint8(rdelem[1][0])
+            if rdelem[0] and len(rdelem[1]) > 0:
+                CalDat[Loop] = uint8(rdelem[1][0])
         CalRet = zeros(32, dtype='uint32')
         CalRdCnt = 0
         for Loop in range(len(CalRet)):

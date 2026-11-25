@@ -231,7 +231,7 @@ class TinyRad(UsbADI.UsbADI):
         dAdarCfg['N'] = 76
         dAdarCfg['M'] = 100
         RetVal  =   self.Dsp_CfgAdarPll(dAdarCfg)
-        if RetVal[0]   == 1:
+        if hasattr(RetVal, "__len__") and len(RetVal) > 0 and RetVal[0] == 1:
             print('ADAR PLL Locked')
         else:
             print('ADAR PLL not locked')
@@ -361,7 +361,10 @@ class TinyRad(UsbADI.UsbADI):
         self.CmdSend(0, Cod, DspCmd);
         self.usbState = 2; # start get data
         UsbData = self.ConGetUsbData(Len * 2);
-        Data    = reshape(UsbData, (int(Len/4), 4));
+        if UsbData is None or len(UsbData) != int(Len):
+            Data = zeros((int(Len/4), 4), dtype=int16)
+        else:
+            Data = reshape(UsbData, (int(Len/4), 4));
 
         self.usbState = 3;  # cmd Recv
         self.CmdRecv();

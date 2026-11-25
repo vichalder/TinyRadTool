@@ -7,7 +7,7 @@
 # of the BSD license.  See the LICENSE file for details.
 #import  src.cmd_modules.Radarbook   as Radarbook
 
-# import  h5py
+import  h5py
 from    numpy import *
 
 
@@ -30,8 +30,7 @@ class FileStore():
                     if isinstance(Vals[1], h5py.Dataset):
                         FileEntry       =   (hFile.get(Key + '/' + Vals[0]))
                         if FileEntry.size == 1:
-                            with FileEntry.astype('double'):
-                                dRes[Vals[0]]   =   double(FileEntry)
+                            dRes[Vals[0]]   =   double(FileEntry[()])
                         else:
                             dRes[Vals[0]]       =   array(FileEntry)
                     if isinstance(Vals[1], h5py.Group):
@@ -44,8 +43,7 @@ class FileStore():
                                     print("Is object")
                                 else:
                                     if FileEntry.size == 1:
-                                        with FileEntry.astype('double'):
-                                            dTmp[GVals[0]]   =   double(FileEntry)
+                                        dTmp[GVals[0]]   =   double(FileEntry[()])
                                     else:
                                         TmpArray            =   array(FileEntry)
                                         TmpArray            =   TmpArray.reshape(FileEntry.shape)
@@ -97,5 +95,5 @@ class FileStore():
                     else:
                         print("Store Data: ", stName)
                         Data    =   varargin[2*Idx+1]
-                        hFile.create_dataset(stName, data = Data.transpose)
+                        hFile.create_dataset(stName, data = Data.transpose() if hasattr(Data, 'transpose') else Data)
                         

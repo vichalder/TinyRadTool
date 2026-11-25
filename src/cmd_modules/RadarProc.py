@@ -173,13 +173,13 @@ class RadarProc(object):
             HCfar   =   tile(self.RangeProfileCfar_HCfar, (Nx,1))
             HCfar   =   HCfar.transpose()
             # Calculate symmetric fft
-            x           =   zeros((int(self.RangeProfile_FFT), Nx),dtype = 'complex_')
+            x           =   zeros((int(self.RangeProfile_FFT), Nx),dtype = 'complex128')
             StrtIdx     =   int((self.RangeProfile_FFT - Ny)/2)
             x[StrtIdx:StrtIdx+Ny,:]     =   Data
             x           =   x*HCfar
         else:
             # Calculate symmetric fft
-            x           =   zeros((int(self.RangeProfile_FFT), Nx),dtype = 'complex_')
+            x           =   zeros((int(self.RangeProfile_FFT), Nx),dtype = 'complex128')
             StrtIdx     =   int((self.RangeProfile_FFT - Ny)/2)
             x[StrtIdx:StrtIdx+Ny,:]     =   Data
 
@@ -317,7 +317,7 @@ class RadarProc(object):
             self.RangeProfile_Window        =   dCfg["Window"]
         if 'FFT' in dCfg:
             self.RangeProfile_FFT           =   dCfg["FFT"]
-            self.RangeProfile_FFT           =   round(self.RangeProfile_FFT/2)*2
+            self.RangeProfile_FFT           =   int(round(self.RangeProfile_FFT/2)*2)
         if 'XPos' in dCfg:
             self.RangeProfile_XPos          =   dCfg["XPos"]
         if 'Abs' in dCfg:
@@ -410,7 +410,7 @@ class RadarProc(object):
             ScaWin  =   Nx
 
         # Use complex array: important for assignment in the next line
-        rd          =   zeros((Ny, int(self.RangeDoppler_VelFFT)), dtype = 'complex_')
+        rd          =   zeros((Ny, int(self.RangeDoppler_VelFFT)), dtype = 'complex128')
         StrtIdx     =   int((self.RangeDoppler_VelFFT - Nx)/2)
         rd[:,StrtIdx:StrtIdx + Nx]    =   X
 
@@ -435,10 +435,10 @@ class RadarProc(object):
             self.RangeDoppler_Window            =   dCfg["Window"]
         if 'RangeFFT' in dCfg:
             self.RangeDoppler_RangeFFT          =   dCfg["RangeFFT"]
-            self.RangeDoppler_RangeFFT          =    round(self.RangeDoppler_RangeFFT/2)*2
+            self.RangeDoppler_RangeFFT          =    int(round(self.RangeDoppler_RangeFFT/2)*2)
         if 'VelFFT' in dCfg:
             self.RangeDoppler_VelFFT            =   dCfg["VelFFT"]
-            self.RangeDoppler_VelFFT            =    round(self.RangeDoppler_VelFFT/2)*2
+            self.RangeDoppler_VelFFT            =    int(round(self.RangeDoppler_VelFFT/2)*2)
         if 'Abs' in dCfg:
             self.RangeDoppler_Abs               =   dCfg["Abs"]
         if 'dB' in dCfg:
@@ -528,7 +528,7 @@ class RadarProc(object):
 
         if len(varargin) > 0:
             ChnIdx      =   int((self.BeamformingUla_AngFFT - Nx)/2)
-            x           =   zeros((self.BeamformingUla_RangeFFT , Nx), dtype = 'complex_')
+            x           =   zeros((self.BeamformingUla_RangeFFT , Nx), dtype = 'complex128')
             StrtIdx     =   int((self.BeamformingUla_RangeFFT - Ny)/2)
             x[StrtIdx:StrtIdx+Ny,:]     =   Data*self.HCfar[StrtIdx:StrtIdx+Ny,ChnIdx:ChnIdx + Nx]
         else:
@@ -567,7 +567,7 @@ class RadarProc(object):
             XChn    =   XChn*Win2D
 
         # Use complex array: important for assignment in the next line
-        jOpt        =   zeros((Ny, int(self.BeamformingUla_AngFFT)), dtype = 'complex_')
+        jOpt        =   zeros((Ny, int(self.BeamformingUla_AngFFT)), dtype = 'complex128')
         StrtIdx     =   int((self.BeamformingUla_AngFFT - Nx)/2)
         jOpt[:,StrtIdx:StrtIdx + Nx]    =   XChn
 
@@ -710,10 +710,10 @@ class RadarProc(object):
             self.BeamformingUla_Window          =   dCfg["Window"]
         if 'RangeFFT' in dCfg:
             self.BeamformingUla_RangeFFT        =   dCfg["RangeFFT"]
-            self.BeamformingUla_RangeFFT        =    round(self.BeamformingUla_RangeFFT/2)*2
+            self.BeamformingUla_RangeFFT        =    int(round(self.BeamformingUla_RangeFFT/2)*2)
         if 'AngFFT' in dCfg:
             self.BeamformingUla_AngFFT          =   dCfg["AngFFT"]
-            self.BeamformingUla_AngFFT          =    round(self.BeamformingUla_AngFFT/2)*2
+            self.BeamformingUla_AngFFT          =    int(round(self.BeamformingUla_AngFFT/2)*2)
         if 'Abs' in dCfg:
             self.BeamformingUla_Abs             =   dCfg["Abs"]
         if 'dB' in dCfg:

@@ -113,6 +113,26 @@ from struct import pack, unpack
 import weakref
 #import matplotlib.pyplot as plt
 import  src.cmd_modules.Computation as Computation
+import  src.cmd_modules.PlatformPaths as PlatformPaths
+
+
+def _buf_bytes(val):
+    if isinstance(val, str):
+        return val.encode("latin-1")
+    if hasattr(val, "tobytes"):
+        return val.tobytes()
+    return bytes(val)
+
+
+def _frombuf(val, dtype):
+    return numpy.frombuffer(_buf_bytes(val), dtype=dtype).copy()
+
+
+def fromstring(val, dtype=float, count=-1, sep=''):
+    if sep == '':
+        res = _frombuf(val, dtype=dtype)
+        return res[:count] if count > 0 else res
+    return numpy.fromstring(val, dtype=dtype, count=count, sep=sep)
 
 class Connection():
 
@@ -248,38 +268,11 @@ class Connection():
                             self.SetIndex(devIdx);
             if stConType == 'Usb':
                 # setup signal handler for sigint to avoid terminating the script inbetween the read function
-                signal.signal(signal.SIGINT, self.HandleSigInt)
-                
-                self.usbDev = usb.core.find(idVendor=0x064B, idProduct=0x7823);
-                if self.usbDev is None:
-                    self.hCon = -1;
-                    raise IOError('Device not found.');
-                else:
-                    self.usbDev.reset();
-                    self.hCon = 1;
-                    self.usbDev.set_configuration();
-                    self.usbCfg  = self.usbDev.get_active_configuration();
-                    self.usbIntf = self.usbCfg[(0,0)]
-                    self.usbWrEp = usb.util.find_descriptor(
-                        self.usbIntf,
-                        # match the first OUT endpoint
-                        custom_match = \
-                        lambda e: \
-                            usb.util.endpoint_direction(e.bEndpointAddress) == \
-                            usb.util.ENDPOINT_OUT)
-                    assert self.usbWrEp is not None
-                    self.usbRdEp = usb.util.find_descriptor(
-                        self.usbIntf,
-                        # match the first OUT endpoint
-                        custom_match = \
-                        lambda e: \
-                            usb.util.endpoint_direction(e.bEndpointAddress) == \
-                            usb.util.ENDPOINT_IN)
-                    assert self.usbRdEp is not None
-                #if platform.system() == 'Linux':
-                #else:
-                #    self.usb  = ctypes.cdll.LoadLibrary("Dll/usb.dll")
-                #    self.hCon = self.usb.ConnectToDevice(True);
+                try:
+                    signal.signal(signal.SIGINT, self.HandleSigInt)
+                except ValueError:
+                    pass
+                self.UsbOpen(raise_on_error=False)
             
         self.Computation        =   Computation.Computation(weakref.ref(self));
         if self.cType == 'RadServe':
@@ -287,8 +280,12 @@ class Connection():
 
     ## Destructor
     def __del__(self):
-        if self.cType == 'Usb':
-            usb.util.dispose_resources(self.usbDev);
+        if getattr(self, "cType", None) == 'Usb':
+            if getattr(self, "usbDev", None) not in (None, 0):
+                try:
+                    usb.util.dispose_resources(self.usbDev)
+                except Exception:
+                    pass
         # Delete handles if exist
         if self.cType == 'RadServe' or self.cType == 'PNet':
             if self.hConDat > 0:
@@ -374,9 +371,9 @@ class Connection():
                 TxData      =   1
                 self.ConNew =   0
             else:
-                self.usbDev      =   self.UsbOpen()
-                if self.usbDev != 0:
-                    self.hCon       =   0
+                self.usbDev      =   self.UsbOpen(raise_on_error=False)
+                if self.usbDev not in (None, 0):
+                    self.hCon       =   1
                     TxData          =   1
                     self.ConNew     =   1
                 
@@ -391,8 +388,12 @@ class Connection():
                     Data2048[1] = (Len >> 8) & 0xff;
                     Data2048[2:int(2 + len(CmdBytes))] = CmdBytes;
                     
-                    if self.usbDev is not None:
-                        self.usbWrEp.write(Data2048);
+                    if self.usbDev not in (None, 0) and getattr(self, "usbWrEp", None) is not None:
+                        try:
+                            self.usbWrEp.write(Data2048);
+                        except Exception as exc:
+                            print("USB write error:", exc)
+                            self.hCon = -1
            
         elif self.cType == 'PNet': 
             TxData                  =   0
@@ -440,7 +441,7 @@ class Connection():
                         Data    = zeros(int(4), dtype='uint32');
                         Data[0] = DevType # type usb
                         Data[1] = uint32(self.cDevIndex)
-                        uid = fromstring(numpy.array(self.cUid, dtype=numpy.uint64).tostring(), dtype='uint32');
+                        uid = fromstring(numpy.array(self.cUid, dtype=numpy.uint64).tobytes(), dtype='uint32');
                         Data[2] = uid[1];
                         Data[3] = uid[0];
                     else:
@@ -494,23 +495,35 @@ class Connection():
         Ret         =   []
         if self.cType == 'Usb':
             TxData          =   0
-            if self.hCon > -1:
+            if self.hCon > -1 and getattr(self, "usbRdEp", None) is not None:
                 TxData      =   1
             else:
-                print('REC: USB Connection closed previously')
+                if dispError:
+                    print('REC: USB Connection closed previously')
             if TxData > 0:
-                HeaderLen   =   128;
-                HeaderData  =   self.usbRdEp.read(HeaderLen);
-                RxDataLen   =   (HeaderData[2] - 1) * 4;
-                RecvLen     =   RxDataLen - (len(HeaderData)  - 4);
-                RxData      =   HeaderData[4:].tobytes()
-                NrBytes     =   RxDataLen - RecvLen;
-                if RecvLen > 0:
-                    # todo append data
-                    print("TODO read moe .. ");
-                    pass
-                if NrBytes != 0:
-                    Ret = fromstring(RxData, dtype=uint32);
+                try:
+                    HeaderLen   =   128;
+                    HeaderData  =   self.usbRdEp.read(HeaderLen);
+                    if len(HeaderData) >= 4:
+                        LenWords    =   int(HeaderData[2]) | (int(HeaderData[3]) << 8)
+                        RxDataLen   =   (LenWords - 1) * 4 if LenWords > 1 else 0
+                        RxData      =   bytearray(HeaderData[4:].tobytes())
+                        RecvLen     =   RxDataLen - len(RxData)
+                        while RecvLen > 0:
+                            MoreData = self.usbRdEp.read(RecvLen)
+                            if len(MoreData) == 0:
+                                break
+                            RxData.extend(MoreData.tobytes())
+                            RecvLen = RxDataLen - len(RxData)
+                        if RxDataLen > 0 and len(RxData) >= RxDataLen:
+                            Ret = _frombuf(bytes(RxData[:RxDataLen]), uint32)
+                        elif RxDataLen == 0:
+                            Ret = zeros(0, dtype=uint32)
+                except Exception as exc:
+                    if dispError:
+                        print("USB read error:", exc)
+                    self.hCon = -1
+                    Ret = []
         elif self.cType == 'PNet':
             TxData          =   0
             if self.hCon > -1:
@@ -641,16 +654,29 @@ class Connection():
                 self.CloseTcpipDataCom();
                 self.hConDat     =   -1;
 
-    def     UsbOpen(self):
+    def     UsbOpen(self, raise_on_error=False):
         if self.cDevType == 'TinyRad':
-            self.usbDev = usb.core.find(idVendor=0x064B, idProduct=0x7823);
+            try:
+                backend = PlatformPaths.find_usb_backend()
+                self.usbDev = usb.core.find(idVendor=0x064B, idProduct=0x7823, backend=backend)
+            except Exception as exc:
+                print("USB backend discovery warning:", exc)
+                self.usbDev = None
             if self.usbDev is None:
-                self.hCon = -1;
-                raise IOError('Device not found.');
-            else:
-                self.hCon = 1;
-                self.usbDev.set_configuration();
-                self.usbCfg  = self.usbDev.get_active_configuration();
+                self.hCon = -1
+                if raise_on_error:
+                    raise IOError('Device not found.')
+                return None
+            try:
+                try:
+                    if self.usbDev.is_kernel_driver_active(0):
+                        self.usbDev.detach_kernel_driver(0)
+                except Exception:
+                    pass
+                self.usbDev.reset()
+                self.hCon = 1
+                self.usbDev.set_configuration()
+                self.usbCfg  = self.usbDev.get_active_configuration()
                 self.usbIntf = self.usbCfg[(0,0)]
                 self.usbWrEp = usb.util.find_descriptor(
                     self.usbIntf,
@@ -662,12 +688,21 @@ class Connection():
                 assert self.usbWrEp is not None
                 self.usbRdEp = usb.util.find_descriptor(
                     self.usbIntf,
-                    # match the first OUT endpoint
+                    # match the first IN endpoint
                     custom_match = \
                     lambda e: \
                         usb.util.endpoint_direction(e.bEndpointAddress) == \
                         usb.util.ENDPOINT_IN)
                 assert self.usbRdEp is not None
+                return self.usbDev
+            except Exception as exc:
+                print("USB device configuration warning:", exc)
+                self.hCon = -1
+                self.usbDev = None
+                if raise_on_error:
+                    raise IOError('Device initialization failed.') from exc
+                return None
+        return None
             
     def     UsbClose(self):
         pass
@@ -862,7 +897,7 @@ class Connection():
             
             Remainder = [];
             if (len(Ret) > 5):
-                Remainder = fromstring(Ret[5:].tostring(), dtype=float32);
+                Remainder = fromstring(Ret[5:].tobytes(), dtype=float32);
             
             if (dataType != 0 and len(Remainder) > 0):
                 self.Computation.SetDataType(dataType, Remainder);            
@@ -900,7 +935,7 @@ class Connection():
                             self.hConVideo[VidIdx]      =   -1;
                             
                             if (len(Ret) >= 8):
-                                self.cVideoName[VidIdx] = numpy.array(Ret[7:], dtype=numpy.uint32).tostring().decode("utf-8").replace('\x00', '');
+                                self.cVideoName[VidIdx] = numpy.array(Ret[7:], dtype=numpy.uint32).tobytes().decode("utf-8").replace('\x00', '');
             
             self.OpenTcpIpDatCom(self.cIpAddr, self.cPortNum);
 
@@ -1018,7 +1053,7 @@ class Connection():
                                 self.cVideoPortOpen[VidIdx] =    1;
                                 self.hConVideo[VidIdx]      =   -1;
                                 
-                                self.cVideoName[VidIdx] = numpy.array(Ret[6:], dtype=numpy.uint32).tostring().decode("utf-8").replace('\x00', '');
+                                self.cVideoName[VidIdx] = numpy.array(Ret[6:], dtype=numpy.uint32).tobytes().decode("utf-8").replace('\x00', '');
                 
                 self.OpenTcpIpDatCom(self.cIpAddr, self.cPortNum);
 
@@ -1096,7 +1131,7 @@ class Connection():
                 Data[1] = uint32(len(stName));
                 for Idx in range(0,len(Name)):
                     Data[2 + Idx] = Name[Idx];
-                valArray = numpy.array(Val, dtype=numpy.float).tostring();
+                valArray = numpy.array(Val, dtype=numpy.float64).tobytes();
                 Data[int(2 + len(Name)):int(2 + len(Name) + 2)] = fromstring(valArray, dtype=numpy.uint32);
             elif (DataType.upper() == 'ARRAY32'):
                 Data = zeros(3 + len(Val) + len(Name));
@@ -1114,7 +1149,7 @@ class Connection():
                 for Idx in range(0,len(Name)):
                     Data[2 + Idx] = Name[Idx];
                 Data[int(2 + len(Name))] = uint32(len(Val)); # len of array
-                valArray = Val.tostring();
+                valArray = Val.tobytes();
                 Data[int(3 + len(Name)):int(3 + len(Name) + len(Val)*2)] = fromstring(numpy.ascontiguousarray(Val), dtype=numpy.uint32);
             else:
                 Len    =   len(Val) % 4;
@@ -1229,15 +1264,20 @@ class Connection():
         
     def ConGetUsbData(self, Len):
         TxData          =   0
-        if self.hCon > -1:
+        if self.hCon > -1 and getattr(self, "usbRdEp", None) is not None:
             TxData      =   1
         else:
             print('REC: USB Connection closed previously')
             
         if TxData > 0:
-            RxData = self.usbRdEp.read(Len);
-            Ret = numpy.frombuffer(RxData, numpy.int16);
-            return Ret;
+            try:
+                RxData = self.usbRdEp.read(int(Len))
+                Ret = numpy.frombuffer(RxData, numpy.int16).copy()
+                return Ret
+            except Exception as exc:
+                print("USB data read error:", exc)
+                self.hCon = -1
+        return numpy.zeros(int(Len // 2), dtype=numpy.int16)
         
     # DOXYGEN ------------------------------------------------------
     #> @brief Display version information of USB mex driver
@@ -1415,7 +1455,7 @@ class Connection():
                     Data[int(2 + len(stPath)/4)]      = uint32(Selection);
                     Data[int(2 + len(stPath)/4 + 1)]  = uint32(len(Param));
                     if (len(Param) > 0):
-                        ParamStr                      = numpy.array(Param, dtype=numpy.float).tostring();
+                        ParamStr                      = numpy.array(Param, dtype=numpy.float64).tobytes();
                         Data[int(2 + len(stPath)/4 + 2):int(2 + len(stPath)/4 + 2 + len(Param)*2)] = fromstring(ParamStr, dtype=uint32);
                                     
                     Ret         =   self.CmdSend(0, int('0x6160',0), Data, 0);

@@ -9,7 +9,7 @@ import  src.ui.proc_modes.ui_ModTarDet as ui_ModTarDet
 from    os.path import expanduser
 import  re
 import  time
-#import  h5py
+import  h5py
 
 
 class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
@@ -37,17 +37,17 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
         super(ModTarDet, self).__init__()
         self.setupUi(self)
         self.patre = patre
-        self.connect(self.Button_Meas_Meas, QtCore.SIGNAL('clicked()'), self.Button_Meas_StartThread)
-        self.connect(self.Button_Meas_Ini, QtCore.SIGNAL('clicked()'), self.Button_Ini_StartThread)
-        QtGui.QShortcut(QtGui.QKeySequence("F11"), self.Widget_Meas, self.toggleFullScreen)
-        self.connect(self.ChkBox_Histog, QtCore.SIGNAL('clicked()'), self.ChkBox_Histog_stateChanged)
-        QtGui.QShortcut(QtGui.QKeySequence("F10"), self.Widget_Meas, self.toggleHistog)
-        QtGui.QShortcut(QtGui.QKeySequence("ALT+F2"), self.Widget_Meas, self.ToggleCmd)        
-        QtGui.QShortcut(QtGui.QKeySequence("Up"), self.Widget_Meas, self.SetCmdTxtUp)
-        QtGui.QShortcut(QtGui.QKeySequence("Down"), self.Widget_Meas, self.SetCmdTxtDown)
-        self.connect(self.Button_LogtoFile, QtCore.SIGNAL('clicked()'), self.Button_LogToFile_Clicked)
-        self.connect(self.Button_ClearLog, QtCore.SIGNAL('clicked()'), self.Button_ClearLog_Clicked)
-        self.connect(self.Edit_Meas_Cmd, QtCore.SIGNAL('returnPressed()'), self.CmdExec)
+        self.Button_Meas_Meas.clicked.connect(self.Button_Meas_StartThread)
+        self.Button_Meas_Ini.clicked.connect(self.Button_Ini_StartThread)
+        QtWidgets.QShortcut(QtGui.QKeySequence("F11"), self.Widget_Meas, self.toggleFullScreen)
+        self.ChkBox_Histog.clicked.connect(self.ChkBox_Histog_stateChanged)
+        QtWidgets.QShortcut(QtGui.QKeySequence("F10"), self.Widget_Meas, self.toggleHistog)
+        QtWidgets.QShortcut(QtGui.QKeySequence("ALT+F2"), self.Widget_Meas, self.ToggleCmd)        
+        QtWidgets.QShortcut(QtGui.QKeySequence("Up"), self.Widget_Meas, self.SetCmdTxtUp)
+        QtWidgets.QShortcut(QtGui.QKeySequence("Down"), self.Widget_Meas, self.SetCmdTxtDown)
+        self.Button_LogtoFile.clicked.connect(self.Button_LogToFile_Clicked)
+        self.Button_ClearLog.clicked.connect(self.Button_ClearLog_Clicked)
+        self.Edit_Meas_Cmd.returnPressed.connect(self.CmdExec)
         self.SigIniTim.connect(self.SigActionTimerStart)
         self.SigIniDone.connect(self.SigActionInitDone)
         self.SigProgressDone.connect(self.SigActionSetProgressDone)
@@ -206,13 +206,13 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
             self.Layout_Meas.addWidget(self.Image_Meas, 4, 0, 1, 8)
             self.fullscreen_widget.close()
         else:
-            self.fullscreen_widget = QtGui.QWidget()
-            self.fullscreen_child_window = QtGui.QWidget(self.fullscreen_widget)
-            self.fullscreen_layout = QtGui.QVBoxLayout(self.fullscreen_widget)
+            self.fullscreen_widget = QtWidgets.QWidget()
+            self.fullscreen_child_window = QtWidgets.QWidget(self.fullscreen_widget)
+            self.fullscreen_layout = QtWidgets.QVBoxLayout(self.fullscreen_widget)
             self.fullscreen_layout.addWidget(self.Image_Meas)
             self.fullscreen_widget.showFullScreen()
-            QtGui.QShortcut(QtGui.QKeySequence("F11"), self.fullscreen_child_window, self.toggleFullScreen)
-            QtGui.QShortcut(QtGui.QKeySequence("F10"), self.fullscreen_child_window, self.toggleHistogFullScreen)
+            QtWidgets.QShortcut(QtGui.QKeySequence("F11"), self.fullscreen_child_window, self.toggleFullScreen)
+            QtWidgets.QShortcut(QtGui.QKeySequence("F10"), self.fullscreen_child_window, self.toggleHistogFullScreen)
             self.fullscreen_state = True
 
     def ChkBox_Histog_stateChanged(self):
@@ -285,7 +285,7 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
 
     def SigActionTimerStart(self):
         self.Timer  =   QtCore.QTimer()
-        self.connect(self.Timer, QtCore.SIGNAL("timeout()"), self.MeasUpdate)
+        self.Timer.timeout.connect(self.MeasUpdate)
         self.Timer.setSingleShot(True)
         self.Timer.setInterval(20)
         self.Timer.start()
@@ -313,7 +313,7 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
     def Button_LogToFile_Clicked(self):
         StoreData   = self.Log.GetTxt()
         Home        = expanduser("~")
-        FileName    = QtGui.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
+        FileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, str("Set Output Path"), Home)
         if FileName != "":
             fs  =   open(FileName, 'w', encoding="utf-8", errors="ignore")
             fs.write(StoreData)
@@ -387,7 +387,7 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
 
         print("Check App Status")
         if self.Brd == None:
-            self.Brd =   self.patre.TinyRad
+            self.Brd =   self.patre.hTinyRad
 
         RetVal                  =   self.Brd.Dsp_GetBrdSts() # TODO: dsp implementation
         if RetVal[0] == False:
@@ -545,7 +545,7 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
 
             self.ProcFrms   =   self.ProcFrms + 1;
             self.progressbar.setRange(0,100)
-            self.progressbar.setValue(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"]) 
+            self.progressbar.setValue(int(100*(self.ProcFrms)/self.dBrdCfg["NrFrms"])) 
 
 
             BrdData         =   self.RfBrd.GetDataEve()
@@ -736,20 +736,20 @@ class ModTarDet(QtWidgets.QMainWindow, ui_ModTarDet.ui_ModTarDet):
             self.Edit_Cfg_LimFixedMax.setText(str(self.SigCfgLimFixedMax))
 
         # Calculate Scaling for x and y axis
-        FreqDisp                    =   np.linspace(0,self.SigCfgRFFT/2-1,self.SigCfgRFFT/2)
+        FreqDisp                    =   np.linspace(0,int(self.SigCfgRFFT/2-1),int(self.SigCfgRFFT/2))
         FreqDisp                    =   FreqDisp/self.SigCfgRFFT*fs
         Range                       =   FreqDisp*c0/(2*kf)
         self.Range                  =   np.copy(Range)
 
-        if Range[self.SigCfgRFFT/2-1] < self.SigCfgRMax:
-            self.SigCfgRMax         =   Range[self.SigCfgRFFT/2-1]  
+        if Range[int(self.SigCfgRFFT/2-1)] < self.SigCfgRMax:
+            self.SigCfgRMax         =   Range[int(self.SigCfgRFFT/2-1)]  
             self.SigCfgRMax         =   np.floor(self.SigCfgRMax * 10)/10
 
         if self.SigCfgRMin < 0:
             self.SigCfgRMin         =   0
         if self.SigCfgRMax < self.SigCfgRMin:
             self.SigCfgRMin         =   0
-            self.SigCfgRMax         =   Range[self.SigCfgRFFT/2-1] 
+            self.SigCfgRMax         =   Range[int(self.SigCfgRFFT/2-1)] 
 
         #Update RMin RMax
         self.UpdIniAppend('Func','self.Edit_Meas_RMin.setText', str(self.SigCfgRMin)) 

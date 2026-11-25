@@ -2,6 +2,7 @@ import  os
 import  pyqtgraph as pg
 import  numpy as np
 from PyQt5 import QtCore, QtGui, QtWidgets
+import  src.cmd_modules.PlatformPaths as PlatformPaths
 
 
 class   Ui_ModFmcw(object):
@@ -21,7 +22,7 @@ class   Ui_ModFmcw(object):
         # Fmcw Define Configuration Page
         #--------------------------------------------------------------------------------------
         # define system widget with grid layout
-        inras_logo_path = os.path.join("src","ressource","img","adi.png")
+        inras_logo_path = PlatformPaths.get_resource_path("src","ressource","img","adi.png")
         self.Image_Cfg_Logo = QtGui.QImage(inras_logo_path)
         self.Label_Cfg_Logo = QtWidgets.QLabel()
         self.Label_Cfg_Logo.setMinimumSize(200, 100)
@@ -121,7 +122,7 @@ class   Ui_ModFmcw(object):
         # Fmcw Measurement Page Time
         #--------------------------------------------------------------------------------------
         # define system widget with grid layout
-        inras_logo_path = os.path.join("src","ressource","img","adi.png")
+        inras_logo_path = PlatformPaths.get_resource_path("src","ressource","img","adi.png")
         self.Image_Meas_Logo = QtGui.QImage(inras_logo_path)
         self.Label_Meas_Logo = QtWidgets.QLabel()
         self.Label_Meas_Logo.setMinimumSize(200, 100)
@@ -192,7 +193,7 @@ class   Ui_ModFmcw(object):
         # Fmcw Measurement Range Time Profile
         #--------------------------------------------------------------------------------------
         # define system widget with grid layout
-        inras_logo_path = os.path.join("src","ressource","img","adi.png")
+        inras_logo_path = PlatformPaths.get_resource_path("src","ressource","img","adi.png")
         self.Image_MeasProf_Logo = QtGui.QImage(inras_logo_path)
         self.Label_MeasProf_Logo = QtWidgets.QLabel()
         self.Label_MeasProf_Logo.setMinimumSize(200, 100)
@@ -267,7 +268,7 @@ class   Ui_ModFmcw(object):
         # Position measurement page
         #--------------------------------------------------------------------------------------
         # define system widget with grid layout
-        inras_logo_path = os.path.join("src","ressource","img","adi.png")
+        inras_logo_path = PlatformPaths.get_resource_path("src","ressource","img","adi.png")
         self.Image_Posn_Logo = QtGui.QImage(inras_logo_path)
         self.Label_Posn_Logo = QtWidgets.QLabel()
         self.Label_Posn_Logo.setMinimumSize(200, 100)
