@@ -52,7 +52,7 @@ Version: ${VERSION}
 Section: science
 Priority: optional
 Architecture: ${DEB_ARCH}
-Depends: libusb-1.0-0
+Depends: libusb-1.0-0, libxcb-xinerama0, libxkbcommon-x11-0, libgl1
 Maintainer: TinyRadTool Maintainers <support@analog.com>
 Description: Analog Devices EV-TINYRAD24G 24GHz Radar Evaluation GUI
  Standalone evaluation software and GUI for the Analog Devices EV-TINYRAD24G

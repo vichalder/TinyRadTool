@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
+import os
 import sys
+
+# Qt5 ignores XDG_SESSION_TYPE=wayland on GNOME by default and forces xcb,
+# which crashes if libxcb-xinerama0 is missing on Wayland-only systems.
+if (
+    sys.platform.startswith("linux")
+    and "QT_QPA_PLATFORM" not in os.environ
+    and (os.environ.get("WAYLAND_DISPLAY") or os.environ.get("XDG_SESSION_TYPE") == "wayland")
+):
+    os.environ["QT_QPA_PLATFORM"] = "wayland;xcb"
+
 from PyQt5 import QtGui, QtWidgets
 
 import src.cmd_modules.FrmwImg as FrmwImg

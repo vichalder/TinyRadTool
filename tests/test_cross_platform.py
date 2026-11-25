@@ -282,3 +282,10 @@ def test_frozen_linux_binary_self_test(tmp_path):
     )
     assert res.returncode == 0, f"stdout: {res.stdout}\nstderr: {res.stderr}"
     assert "SELF_TEST_OK" in res.stdout
+
+
+def test_linux_deb_control_declares_qt_runtime_deps():
+    build_script = PlatformPaths.get_bundle_dir() / "packaging" / "linux" / "build_linux.sh"
+    content = build_script.read_text(encoding="utf-8")
+    for dep in ("libusb-1.0-0", "libxcb-xinerama0", "libxkbcommon-x11-0", "libgl1"):
+        assert dep in content, f"Missing {dep} in {build_script}"
