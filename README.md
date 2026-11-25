@@ -8,7 +8,7 @@
 
 You do **not** need to install Python or know how to use programming tools to run TinyRadTool.
 
-1. On this page, look on the right-hand side (or at the top on mobile) and click **Releases**.
+1. Go to the **[Latest Release page](https://github.com/vichalder/TinyRadTool/releases/latest)** (or click **Releases** on the right-hand side of this page).
 2. Under the latest release, scroll down to **Assets** and download the file for your computer:
    - **Mac (M1, M2, M3, M4 / Apple Silicon):** `TinyRadTool-macOS-arm64.dmg`
    - **Mac (older Intel Macs):** `TinyRadTool-macOS-x86_64.dmg`
