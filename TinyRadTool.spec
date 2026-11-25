@@ -89,16 +89,18 @@ coll = COLLECT(
 )
 
 if sys.platform == "darwin":
+    icns_path = project_root / "build" / "TinyRadTool.icns"
     app = BUNDLE(
         coll,
         name="TinyRadTool.app",
-        icon=None,
+        icon=str(icns_path) if icns_path.is_file() else None,
         bundle_identifier="com.analog.tinyradtool",
         info_plist={
             "CFBundleName": "TinyRadTool",
             "CFBundleDisplayName": "TinyRadTool",
             "CFBundleShortVersionString": "1.1.2",
             "CFBundleVersion": "1.1.2",
+            "CFBundleIconFile": "TinyRadTool.icns",
             "NSHighResolutionCapable": True,
             "NSPrincipalClass": "NSApplication",
         },

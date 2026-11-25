@@ -32,14 +32,20 @@ Artifacts produced in `dist/`:
 - `dist/TinyRadTool-linux-x86_64.tar.gz`
 - `dist/tinyradtool_1.1.2_amd64.deb`
 
-### macOS (`TinyRadTool.app` + `TinyRadTool-macOS.dmg`)
+### macOS (`TinyRadTool.app` + `TinyRadTool-macOS-<arch>.dmg`)
 ```bash
 brew install libusb
 bash packaging/macos/build_macos.sh
 ```
 Artifacts produced in `dist/`:
 - `dist/TinyRadTool.app` (bundles `libusb-1.0.dylib`, `config/*.rtc`, and `firmware/*.img`)
-- `dist/TinyRadTool-macOS.dmg`
+- `dist/TinyRadTool-macOS-<arch>.dmg` (`arm64` on Apple Silicon, `x86_64` on Intel)
+
+> **Gatekeeper note (unsigned / ad-hoc builds):** If you install an un-notarized `.dmg` downloaded from the internet, macOS may block opening it. Either allow it in **System Settings → Privacy & Security → Open Anyway**, or run:
+> ```bash
+> xattr -cr /Applications/TinyRadTool.app
+> ```
+> To produce signed and notarized builds, set `DEVELOPER_ID_APP`, `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD` before running `build_macos.sh` (or configure them as GitHub Actions secrets).
 
 ---
 

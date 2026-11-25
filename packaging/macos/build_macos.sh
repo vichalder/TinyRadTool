@@ -32,11 +32,19 @@ if [ -f "$ICNS_PATH" ]; then
     cp "$ICNS_PATH" "$ROOT_DIR/dist/TinyRadTool.app/Contents/Resources/TinyRadTool.icns" || true
 fi
 
-echo "==> [3/4] Applying ad-hoc code signature to TinyRadTool.app..."
-codesign --force --deep --sign - "$ROOT_DIR/dist/TinyRadTool.app" || true
+echo "==> [3/4] Signing TinyRadTool.app..."
+SIGN_IDENTITY="${DEVELOPER_ID_APP:--}"
+if [ "$SIGN_IDENTITY" = "-" ]; then
+    echo "    Using ad-hoc signature (set DEVELOPER_ID_APP for Developer ID signing)."
+    codesign --force --deep --sign - "$ROOT_DIR/dist/TinyRadTool.app"
+else
+    echo "    Using Developer ID: $SIGN_IDENTITY"
+    codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$ROOT_DIR/dist/TinyRadTool.app"
+fi
 
+ARCH="$(uname -m)"
 DMG_STAGE="$ROOT_DIR/build/dmg_stage"
-DMG_OUT="$ROOT_DIR/dist/TinyRadTool-macOS.dmg"
+DMG_OUT="$ROOT_DIR/dist/TinyRadTool-macOS-${ARCH}.dmg"
 rm -rf "$DMG_STAGE" "$DMG_OUT"
 mkdir -p "$DMG_STAGE"
 cp -R "$ROOT_DIR/dist/TinyRadTool.app" "$DMG_STAGE/"
@@ -44,6 +52,19 @@ ln -s /Applications "$DMG_STAGE/Applications"
 
 echo "==> [4/4] Creating distributable disk image: $DMG_OUT"
 hdiutil create -volname "TinyRadTool" -srcfolder "$DMG_STAGE" -ov -format UDZO "$DMG_OUT"
+
+if [ "$SIGN_IDENTITY" != "-" ]; then
+    codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG_OUT"
+    if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ] && [ -n "${APPLE_APP_PASSWORD:-}" ]; then
+        echo "==> Submitting $DMG_OUT for Apple notarization..."
+        xcrun notarytool submit "$DMG_OUT" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait
+        xcrun stapler staple "$DMG_OUT"
+    fi
+fi
 
 echo "==> macOS build complete! Artifacts in $ROOT_DIR/dist:"
 ls -lh "$ROOT_DIR/dist"
